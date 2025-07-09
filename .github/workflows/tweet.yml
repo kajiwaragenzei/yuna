@@ -1,4 +1,4 @@
-name: Tweet from Yuna Zeta-5
+name: Tweet from Yuna Zeta-5 (Gemini Version)
 
 on:
   schedule:
@@ -9,6 +9,7 @@ on:
 jobs:
   tweet:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -21,14 +22,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install openai tweepy python-dotenv
+          pip install tweepy python-dotenv google-generativeai
 
       - name: Run bot
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           API_KEY: ${{ secrets.API_KEY }}
           API_SECRET: ${{ secrets.API_SECRET }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           ACCESS_SECRET: ${{ secrets.ACCESS_SECRET }}
         run: python tweet_bot.py
-# ping
