@@ -1,4 +1,3 @@
-# tweet_bot.py（Gemini 2.0 Flash対応）
 import os
 import requests
 import tweepy
@@ -6,37 +5,45 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# 環境変数
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")  # OAuth2 access_token
+PROMPT = "AIについて、Vtuberのユナ・ゼータ5として明るく可愛くつぶやいてください。140文字以内で。"
 
+# Geminiでツイート内容を生成
 def generate_tweet():
-    prompt = "ユナ・ゼータ5として、AIや未来について呟く一言を140字以内で生成してください。かわいさとSF感を少し混ぜて。"
-    body = {
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    headers = {
+        "Content-Type": "application/json"
+    }
+    payload = {
         "contents": [
             {
                 "parts": [
-                    {"text": prompt}
+                    {"text": PROMPT}
                 ]
             }
         ]
     }
-    response = requests.post(API_URL, json=body)
+    response = requests.post(f"{url}?key={GEMINI_API_KEY}", headers=headers, json=payload)
+
     if response.status_code != 200:
         raise RuntimeError(f"Gemini API error: {response.status_code} {response.text}")
-    return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
+    candidates = response.json()["candidates"]
+    text = candidates[0]["content"]["parts"][0]["text"].strip()
+    return text
+
+# X (Twitter) に投稿
 def post_to_twitter(text):
-    auth = tweepy.OAuth1UserHandler(
-        os.getenv("API_KEY"),
-        os.getenv("API_SECRET"),
-        os.getenv("ACCESS_TOKEN"),
-        os.getenv("ACCESS_SECRET")
+    client = tweepy.Client(
+        access_token=TWITTER_ACCESS_TOKEN
     )
-    api = tweepy.API(auth)
-    api.update_status(status=text)
+    response = client.create_tweet(text=text)
+    print("✅ 投稿完了:", response.data["id"])
 
+# 実行
 if __name__ == "__main__":
     tweet = generate_tweet()
     print("生成されたツイート:", tweet)
     post_to_twitter(tweet)
-    print("✅ 投稿完了")
