@@ -1,18 +1,29 @@
+# tweet_bot.py (Google Gemini REST API版)
 import os
+import requests
 import tweepy
 from dotenv import load_dotenv
-import google.generativeai as genai
 
 load_dotenv()
 
-# Gemini API setup
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel(model_name="gemini-pro")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+API_URL = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 
 def generate_tweet():
     prompt = "ユナ・ゼータ5として、AIや未来について呟く一言を140字以内で生成してください。かわいさとSF感を少し混ぜて。"
-    response = model.generate_content(prompt)
-    return response.text.strip()
+    body = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
+    }
+    response = requests.post(API_URL, json=body)
+    if response.status_code != 200:
+        raise RuntimeError(f"Gemini API error: {response.status_code} {response.text}")
+    return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 def post_to_twitter(text):
     auth = tweepy.OAuth1UserHandler(
