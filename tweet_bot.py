@@ -7,7 +7,7 @@ load_dotenv()
 
 # Gemini API setup
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-pro")
+model = genai.GenerativeModel(model_name="gemini-pro")
 
 def generate_tweet():
     prompt = "ユナ・ゼータ5として、AIや未来について呟く一言を140字以内で生成してください。かわいさとSF感を少し混ぜて。"
