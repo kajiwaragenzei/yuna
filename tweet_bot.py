@@ -1,24 +1,18 @@
-# tweet_bot.py
 import os
-from openai import OpenAI
 import tweepy
 from dotenv import load_dotenv
+import google.generativeai as genai
 
-# Load .env if running locally
 load_dotenv()
 
-# OpenAI client setup
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Gemini API setup
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-pro")
 
 def generate_tweet():
     prompt = "ユナ・ゼータ5として、AIや未来について呟く一言を140字以内で生成してください。かわいさとSF感を少し混ぜて。"
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return response.choices[0].message.content.strip()
+    response = model.generate_content(prompt)
+    return response.text.strip()
 
 def post_to_twitter(text):
     auth = tweepy.OAuth1UserHandler(
