@@ -36,11 +36,11 @@ def generate_tweet():
 
 # X (Twitter) に投稿
 def post_to_twitter(text):
-    client = tweepy.Client(
-        access_token=TWITTER_ACCESS_TOKEN
-    )
+    bearer_token = os.getenv("TWITTER_ACCESS_TOKEN")
+    client = tweepy.Client(bearer_token=bearer_token)
     response = client.create_tweet(text=text)
     print("✅ 投稿完了:", response.data["id"])
+
 
 # 実行
 if __name__ == "__main__":
