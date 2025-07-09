@@ -1,18 +1,18 @@
 # tweet_bot.py
 import os
-import openai
+from openai import OpenAI
 import tweepy
 from dotenv import load_dotenv
 
 # Load .env if running locally
 load_dotenv()
 
-# OpenAI settings
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI client setup
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_tweet():
     prompt = "ユナ・ゼータ5として、AIや未来について呟く一言を140字以内で生成してください。かわいさとSF感を少し混ぜて。"
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "user", "content": prompt}
