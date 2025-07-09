@@ -1,48 +1,37 @@
 import os
 import requests
 import tweepy
-from dotenv import load_dotenv
 
-load_dotenv()
-
-# 環境変数
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")  # OAuth2 access_token
-PROMPT = "AIについて、Vtuberのユナ・ゼータ5として明るく可愛くつぶやいてください。140文字以内で。"
-
-# Geminiでツイート内容を生成
 def generate_tweet():
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-    headers = {
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": PROMPT}
-                ]
-            }
-        ]
-    }
-    response = requests.post(f"{url}?key={GEMINI_API_KEY}", headers=headers, json=payload)
+    api_key = os.getenv("GEMINI_API_KEY")
+    prompt = "ユナ・ゼータ5として、かわいくAIについて語るツイートを1つ出力してください。140字以内、日本語で。"
 
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    headers = {"Content-Type": "application/json"}
+    params = {"key": api_key}
+    data = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+
+    response = requests.post(url, headers=headers, params=params, json=data)
     if response.status_code != 200:
         raise RuntimeError(f"Gemini API error: {response.status_code} {response.text}")
+    
+    return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
-    candidates = response.json()["candidates"]
-    text = candidates[0]["content"]["parts"][0]["text"].strip()
-    return text
-
-# X (Twitter) に投稿
 def post_to_twitter(text):
-    bearer_token = os.getenv("TWITTER_ACCESS_TOKEN")
-    client = tweepy.Client(bearer_token=bearer_token)
+    client = tweepy.Client(
+        bearer_token=os.getenv("TWITTER_BEARER_TOKEN"),
+        consumer_key=os.getenv("TWITTER_CONSUMER_KEY"),
+        consumer_secret=os.getenv("TWITTER_CONSUMER_SECRET"),
+        access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
+        access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
+    )
     response = client.create_tweet(text=text)
-    print("✅ 投稿完了:", response.data["id"])
+    print(f"ツイート成功: {response.data}")
 
-
-# 実行
 if __name__ == "__main__":
     tweet = generate_tweet()
     print("生成されたツイート:", tweet)
