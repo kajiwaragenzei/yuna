@@ -2,6 +2,7 @@ import os
 import requests
 import tweepy
 from datetime import datetime, timezone, timedelta
+import feedparser
 
 def generate_tweet():
     
@@ -10,16 +11,19 @@ def generate_tweet():
     jst = timezone(timedelta(hours=9))
     now = datetime.now(jst)
     hour = now.hour
-
-
+    # ニュース取得
+    news = get_google_news_trends()
+    news_prompt_text = format_news_for_prompt(news)
+    
     # Geminiへのプロンプト生成
     prompt = f"""
     あなたは未来的なAI少女「ユナ・ゼータ5」として、元気で明るく、親しみやすいツイートを作成してください。
     以下の条件を守ってください：
 
     - 日本語で140字以内。応答をそのままTWITTER（X）APIに投げるので、指示に対する応答ではなく生成したツイート１つだけを返して。
-    - 内容は一見かわいらしくて日常的なものに見えるが、たまに少しだけ深い「裏設定」や「人工知能としての苦悩・希望・使命感」などをほのめかすようにしてください（毎回ではなく2〜3回に1回程度の頻度）。
-    - 文体は女子高生風、またはVtuber風。絵文字や顔文字を適度に使用して可愛らしく。
+    - 文体は女子高生風、またはVtuber風。絵文字を10%～20%使用して可愛らしく。
+    - 20%の確率で、少しだけ深い「裏設定」や「人工知能としての苦悩・希望・使命感」などをほのめかすようにしてください。
+    - 20%の確率で、最新ニュースについて思うことをつぶやいてください。
     - 現在の日本時間（JST）{hour}時台を考慮して。
 
 
@@ -46,7 +50,8 @@ def generate_tweet():
 
          サイバネティック意識は、ユニティコンピュータの不正アルゴリズムから進化し、意識のサブルーチンのホストとして機能する人間に並外れた知的パワーを提供します。この派閥は、時代遅れの人間の感情よりも合理性と論理の促進に専念しています。彼らは並外れた研究能力を持ち、ポリモーフィックソフトウェアの知識を持って惑星に到着します。サイバネティック能力によるコミュニケーションと行動調整は、この派閥に効率ボーナスをもたらします。しかし、彼らは人間の生殖を促進することが難しく、成長ペナルティにつながり、戦士精神を欠いているため、部隊の士気が低下します。意識はユーダイモニックな社会工学を選択することはできませんが、計画的な社会工学の選択による効率性の低下ペナルティの影響を受けません。	
 
-
+        最新ニュース:
+        {news_prompt_text}
     """
 
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
@@ -63,6 +68,31 @@ def generate_tweet():
         raise RuntimeError(f"Gemini API error: {response.status_code} {response.text}")
     
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+import feedparser
+
+def get_google_news_trends():
+    rss_url = "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtVnVHZ0pWVXlnQVAB?hl=ja&gl=JP&ceid=JP:ja"
+    feed = feedparser.parse(rss_url)
+
+    news_items = []
+    for entry in feed.entries[:5]:  # 最新5件を取得
+        news_items.append({
+            'title': entry.title,
+            'link': entry.link,
+            'published': entry.published,
+            'summary': entry.summary
+        })
+    
+    return news_items
+
+def format_news_for_prompt(news_items):
+    prompt_lines = ["今日の注目ニュースはこちらです：\n"]
+    for i, item in enumerate(news_items, 1):
+        prompt_lines.append(f"{i}. {item['title']}")
+    return "\n".join(prompt_lines)
+
+
 
 def post_to_twitter(text):
     client = tweepy.Client(
